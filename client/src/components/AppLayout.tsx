@@ -38,21 +38,22 @@ function NavLinks({ onClick, mobile = false }: { onClick?: () => void; mobile?: 
       {navItems.map((item) => {
         const isActive = location === item.path;
         return (
-          <Link key={item.path} href={item.path} onClick={onClick}>
-            <span
-              className={`flex items-center gap-3 rounded-lg text-sm font-medium transition-colors active:scale-[0.98] ${
-                mobile 
-                  ? "px-4 py-3 min-h-[48px]" 
-                  : "px-3 py-2"
-              } ${
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted active:bg-muted"
-              }`}
-            >
-              <item.icon className={mobile ? "h-5 w-5" : "h-4 w-4"} />
-              {item.label}
-            </span>
+          <Link 
+            key={item.path} 
+            href={item.path} 
+            onClick={onClick}
+            className={`flex items-center gap-2 rounded-lg text-sm font-medium transition-colors active:scale-[0.98] ${
+              mobile 
+                ? "px-4 py-3 min-h-[48px] gap-3" 
+                : "px-3 py-2 h-9"
+            } ${
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+            }`}
+          >
+            <item.icon className={mobile ? "h-5 w-5" : "h-4 w-4"} />
+            {item.label}
           </Link>
         );
       })}
@@ -213,7 +214,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </Link>
 
           {/* Desktop navigation */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-1 h-full">
             <NavLinks />
           </nav>
 
