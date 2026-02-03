@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import type { Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
@@ -71,6 +71,12 @@ export const useAuthStore = create<AuthState>()(
         },
 
         _init: () => {
+          // If Supabase is not configured, skip auth initialization
+          if (!isSupabaseConfigured) {
+            set({ loading: false });
+            return () => {};
+          }
+          
           // Get initial session
           supabase.auth.getSession().then(({ data: { session } }) => {
             set({

@@ -2,11 +2,13 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import { createProxyMiddleware } from "http-proxy-middleware";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "./routers";
 import { createContext } from "./lib/context";
 import { serveStatic, setupVite } from "./lib/vite";
 import { logger } from "./lib/logSession";
+import { ENV } from "./lib/env";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -38,6 +40,20 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  
+  // In self-hosted mode, proxy /auth requests to GoTrue
+  if (ENV.isSelfHosted) {
+    log.info("Self-hosted mode: proxying /auth to GoTrue on localhost:9999");
+    app.use(
+      "/auth",
+      createProxyMiddleware({
+        target: "http://localhost:9999",
+        changeOrigin: true,
+        pathRewrite: { "^/auth": "" },
+      })
+    );
+  }
+  
   // tRPC API
   app.use(
     "/api/trpc",

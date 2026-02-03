@@ -1,5 +1,5 @@
 import { trpc } from "@/lib/trpc";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { useState, type ReactNode } from "react";
@@ -37,6 +37,9 @@ export function TrpcProvider({ children }: { children: ReactNode }) {
           url: "/api/trpc",
           transformer: superjson,
           async headers() {
+            if (!isSupabaseConfigured) {
+              return {};
+            }
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.access_token) {
               return {

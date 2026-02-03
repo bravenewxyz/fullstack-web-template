@@ -1,7 +1,7 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User } from "../../drizzle/schema";
 import * as db from "../db";
-import { supabaseAdmin } from "./supabase";
+import { getSupabaseAdmin } from "./supabase";
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
@@ -16,7 +16,9 @@ export async function createContext(
 
   try {
     const authHeader = opts.req.headers.authorization;
-    if (authHeader?.startsWith("Bearer ")) {
+    const supabaseAdmin = getSupabaseAdmin();
+    
+    if (authHeader?.startsWith("Bearer ") && supabaseAdmin) {
       const token = authHeader.slice(7);
       const { data: { user: supabaseUser }, error } = await supabaseAdmin.auth.getUser(token);
 
