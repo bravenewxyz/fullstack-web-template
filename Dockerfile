@@ -14,11 +14,12 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install GoTrue (Supabase Auth)
-ARG GOTRUE_VERSION=2.151.0
-RUN wget -q https://github.com/supabase/gotrue/releases/download/v${GOTRUE_VERSION}/gotrue_${GOTRUE_VERSION}_linux_amd64.tar.gz \
-    && tar -xzf gotrue_${GOTRUE_VERSION}_linux_amd64.tar.gz -C /usr/local/bin \
-    && rm gotrue_${GOTRUE_VERSION}_linux_amd64.tar.gz \
+# Install Supabase Auth (formerly GoTrue)
+ARG AUTH_VERSION=2.167.0
+RUN wget -q https://github.com/supabase/auth/releases/download/v${AUTH_VERSION}/auth_${AUTH_VERSION}_linux_amd64.tar.gz \
+    && tar -xzf auth_${AUTH_VERSION}_linux_amd64.tar.gz -C /usr/local/bin \
+    && rm auth_${AUTH_VERSION}_linux_amd64.tar.gz \
+    && mv /usr/local/bin/auth /usr/local/bin/gotrue \
     && chmod +x /usr/local/bin/gotrue
 
 # Install bun
