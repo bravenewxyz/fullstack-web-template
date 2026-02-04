@@ -1,6 +1,13 @@
+/**
+ * Type-Safe Socket.IO Server
+ * 
+ * Uses shared Zod schemas for type-safe events.
+ */
+
 import { Server as HttpServer } from "http";
-import { Server, Socket } from "socket.io";
+import { Server } from "socket.io";
 import { logger } from "./lib/logSession";
+import type { ClientToServerEvents, ServerToClientEvents } from "@shared/schemas";
 
 const log = logger.child("Socket");
 
@@ -8,8 +15,11 @@ const log = logger.child("Socket");
 let realtimeCounter = 0;
 let connectedUsers = 0;
 
-export function initializeSocket(httpServer: HttpServer) {
-  const io = new Server(httpServer, {
+// Type-safe Socket.IO server
+type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;
+
+export function initializeSocket(httpServer: HttpServer): TypedServer {
+  const io: TypedServer = new Server(httpServer, {
     cors: {
       origin: "*",
       methods: ["GET", "POST"],
@@ -17,11 +27,11 @@ export function initializeSocket(httpServer: HttpServer) {
     path: "/socket.io",
   });
 
-  io.on("connection", (socket: Socket) => {
+  io.on("connection", (socket) => {
     connectedUsers++;
     log.info(`User connected: ${socket.id} (${connectedUsers} online)`);
 
-    // Send current state to newly connected client
+    // Send current state to newly connected client (type-safe!)
     socket.emit("state:init", {
       counter: realtimeCounter,
       users: connectedUsers,
@@ -30,14 +40,14 @@ export function initializeSocket(httpServer: HttpServer) {
     // Broadcast updated user count to all clients
     io.emit("users:count", connectedUsers);
 
-    // Handle counter increment
+    // Handle counter increment (type-safe!)
     socket.on("counter:increment", () => {
       realtimeCounter++;
       io.emit("counter:update", realtimeCounter);
       log.info(`Counter incremented to ${realtimeCounter} by ${socket.id}`);
     });
 
-    // Handle counter decrement
+    // Handle counter decrement (type-safe!)
     socket.on("counter:decrement", () => {
       realtimeCounter--;
       io.emit("counter:update", realtimeCounter);
@@ -54,4 +64,12 @@ export function initializeSocket(httpServer: HttpServer) {
 
   log.info("Socket.IO initialized");
   return io;
+}
+
+// Export state getters for potential use in other modules
+export function getRealtimeState() {
+  return {
+    counter: realtimeCounter,
+    users: connectedUsers,
+  };
 }

@@ -1,10 +1,15 @@
+/**
+ * Type-Safe Socket.IO Client Hook
+ * 
+ * Uses shared Zod schemas for type-safe events.
+ */
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import { io, Socket } from "socket.io-client";
+import type { ClientToServerEvents, ServerToClientEvents, StateInit } from "@shared/schemas";
 
-interface RealtimeState {
-  counter: number;
-  users: number;
-}
+// Type-safe socket
+type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 interface UseSocketReturn {
   connected: boolean;
@@ -18,11 +23,11 @@ export function useSocket(): UseSocketReturn {
   const [connected, setConnected] = useState(false);
   const [counter, setCounter] = useState(0);
   const [users, setUsers] = useState(0);
-  const socketRef = useRef<Socket | null>(null);
+  const socketRef = useRef<TypedSocket | null>(null);
 
   useEffect(() => {
     // Connect to the same origin (works in dev and prod)
-    const socket = io({
+    const socket: TypedSocket = io({
       path: "/socket.io",
       transports: ["websocket", "polling"],
     });
@@ -37,19 +42,17 @@ export function useSocket(): UseSocketReturn {
       setConnected(false);
     });
 
-    // Receive initial state
-    socket.on("state:init", (state: RealtimeState) => {
+    // Type-safe event handlers!
+    socket.on("state:init", (state: StateInit) => {
       setCounter(state.counter);
       setUsers(state.users);
     });
 
-    // Receive counter updates
-    socket.on("counter:update", (value: number) => {
+    socket.on("counter:update", (value) => {
       setCounter(value);
     });
 
-    // Receive user count updates
-    socket.on("users:count", (count: number) => {
+    socket.on("users:count", (count) => {
       setUsers(count);
     });
 
@@ -58,6 +61,7 @@ export function useSocket(): UseSocketReturn {
     };
   }, []);
 
+  // Type-safe emitters!
   const increment = useCallback(() => {
     socketRef.current?.emit("counter:increment");
   }, []);

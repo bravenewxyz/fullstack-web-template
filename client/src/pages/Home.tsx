@@ -65,7 +65,7 @@ export default function Home() {
           A modern stack for building production-ready web applications.
           React, tRPC, Supabase, and more.
         </p>
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0 flex-wrap">
           <Button asChild size="lg" className="w-full sm:w-auto h-12 sm:h-11">
             <Link href="/showcase">
               View Components

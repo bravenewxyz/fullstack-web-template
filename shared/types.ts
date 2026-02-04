@@ -5,3 +5,4 @@
 
 export type * from "../drizzle/schema";
 export * from "./errors";
+export * from "./schemas";
