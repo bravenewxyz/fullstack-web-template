@@ -99,13 +99,17 @@ else
     # Initialize PostgreSQL if needed
     if [ ! -f "/data/postgres/PG_VERSION" ]; then
         echo "Initializing PostgreSQL database..."
-        su postgres -c "/usr/lib/postgresql/15/bin/initdb -D /data/postgres"
+        # Use --auth-local and --auth-host to suppress "trust authentication" warning
+        su postgres -c "/usr/lib/postgresql/15/bin/initdb -D /data/postgres --auth-local=trust --auth-host=md5" 2>&1
         
         # Configure PostgreSQL
         echo "host all all 0.0.0.0/0 md5" >> /data/postgres/pg_hba.conf
         echo "host all all 127.0.0.1/32 trust" >> /data/postgres/pg_hba.conf
         echo "local all all trust" >> /data/postgres/pg_hba.conf
         echo "listen_addresses = 'localhost'" >> /data/postgres/postgresql.conf
+        # Send PostgreSQL logs to stdout instead of stderr
+        echo "logging_collector = off" >> /data/postgres/postgresql.conf
+        echo "log_destination = 'stderr'" >> /data/postgres/postgresql.conf
         
         # Start PostgreSQL temporarily to create user and database
         su postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D /data/postgres -w start"
@@ -138,9 +142,9 @@ else
         su postgres -c "psql -c 'CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";'"
         su postgres -c "psql -c 'CREATE EXTENSION IF NOT EXISTS pgcrypto;'"
         
-        # Run Drizzle migrations
+        # Run Drizzle migrations (run directly to avoid bun echoing command to stderr)
         echo "Running database migrations..."
-        cd /app && bun run db:push || echo "Migrations may need to run again on next start"
+        cd /app && ./node_modules/.bin/drizzle-kit generate && ./node_modules/.bin/drizzle-kit migrate || echo "Migrations may need to run again on next start"
         
         su postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D /data/postgres -w stop"
         echo "PostgreSQL initialized"
