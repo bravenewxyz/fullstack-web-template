@@ -15,12 +15,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Supabase Auth (formerly GoTrue)
-ARG AUTH_VERSION=2.167.0
-RUN wget -q https://github.com/supabase/auth/releases/download/v${AUTH_VERSION}/auth_${AUTH_VERSION}_linux_amd64.tar.gz \
-    && tar -xzf auth_${AUTH_VERSION}_linux_amd64.tar.gz -C /usr/local/bin \
-    && rm auth_${AUTH_VERSION}_linux_amd64.tar.gz \
-    && mv /usr/local/bin/auth /usr/local/bin/gotrue \
-    && chmod +x /usr/local/bin/gotrue
+ARG AUTH_VERSION=2.185.0
+RUN wget -q https://github.com/supabase/auth/releases/download/v${AUTH_VERSION}/auth-v${AUTH_VERSION}-x86.tar.gz \
+    && tar -xzf auth-v${AUTH_VERSION}-x86.tar.gz -C /usr/local/bin \
+    && rm auth-v${AUTH_VERSION}-x86.tar.gz \
+    && chmod +x /usr/local/bin/auth
 
 # Install bun
 RUN npm install -g bun
