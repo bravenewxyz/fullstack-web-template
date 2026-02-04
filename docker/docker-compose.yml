@@ -25,6 +25,7 @@ services:
       db:
         condition: service_healthy
     environment:
+      # GOTRUE_* are the official Supabase Auth env var names
       GOTRUE_API_HOST: 0.0.0.0
       GOTRUE_API_PORT: 9999
       API_EXTERNAL_URL: ${API_EXTERNAL_URL:-http://localhost:8000}

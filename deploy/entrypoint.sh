@@ -53,7 +53,14 @@ fi
 # Auth service configuration (GOTRUE_* are official Auth env var names)
 export GOTRUE_OPERATOR_TOKEN=$SUPABASE_SERVICE_ROLE_KEY
 export GOTRUE_JWT_AUD="authenticated"
-export GOTRUE_JWT_DEFAULT_GROUP_NAME="authenticated"
+
+# Logging configuration - use JSON format to fix malformed log output
+export GOTRUE_LOG_LEVEL="info"
+export GOTRUE_LOG_FILE="/dev/stdout"
+
+# Unset deprecated env vars to suppress warnings
+unset GOTRUE_JWT_DEFAULT_GROUP_NAME
+unset GOTRUE_JWT_ADMIN_GROUP_NAME
 
 if [ "$USE_EXTERNAL_DB" = true ]; then
     # Using external database - set Auth service to use the same DATABASE_URL

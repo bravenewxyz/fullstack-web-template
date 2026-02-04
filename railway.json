@@ -6,7 +6,7 @@
   },
   "deploy": {
     "startCommand": "/entrypoint.sh supervisord -c /etc/supervisor/conf.d/supervisord.conf",
-    "healthcheckPath": "/api/trpc",
+    "healthcheckPath": "/health",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
