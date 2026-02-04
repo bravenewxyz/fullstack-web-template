@@ -40,16 +40,20 @@ fi
 # Set up URLs based on Railway environment
 if [ -n "$RAILWAY_PUBLIC_DOMAIN" ]; then
     export GOTRUE_SITE_URL="https://$RAILWAY_PUBLIC_DOMAIN"
+    export API_EXTERNAL_URL="https://$RAILWAY_PUBLIC_DOMAIN/auth"
     # Client uses /auth path on same origin in self-hosted mode
     export VITE_SUPABASE_URL=""
     echo "Configured for Railway domain: $RAILWAY_PUBLIC_DOMAIN"
 else
     export GOTRUE_SITE_URL="http://localhost:${PORT:-3000}"
+    export API_EXTERNAL_URL="http://localhost:9999"
     export VITE_SUPABASE_URL=""
 fi
 
-# GoTrue operator token for admin API
+# Auth service configuration
 export GOTRUE_OPERATOR_TOKEN=$SUPABASE_SERVICE_ROLE_KEY
+export GOTRUE_JWT_AUD="authenticated"
+export GOTRUE_JWT_DEFAULT_GROUP_NAME="authenticated"
 
 if [ "$USE_EXTERNAL_DB" = true ]; then
     # Using external database - set GoTrue to use the same DATABASE_URL
@@ -100,7 +104,7 @@ else
         # Set postgres password and create auth schema
         su postgres -c "psql -c \"ALTER USER postgres PASSWORD '${POSTGRES_PASSWORD}';\""
         su postgres -c "psql -c \"CREATE SCHEMA IF NOT EXISTS auth;\""
-        su postgres -c "psql -c \"CREATE EXTENSION IF NOT EXISTS uuid-ossp;\""
+        su postgres -c "psql -c 'CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";'"
         
         # Run Drizzle migrations
         echo "Running database migrations..."
