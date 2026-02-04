@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { useSocket } from "@/hooks/useSocket";
 import { trpc } from "@/lib/trpc";
 import { useAppStore } from "@/store";
 import { motion } from "framer-motion";
-import { ArrowRight, Code, Database, Lightning, CloudArrowUp } from "@phosphor-icons/react";
+import { ArrowRight, Code, Database, Lightning, CloudArrowUp, Broadcast, Users } from "@phosphor-icons/react";
 import { Link } from "wouter";
 
 const features = [
@@ -29,7 +30,7 @@ export default function Home() {
   const { user, loading } = useAuth();
   const { count, increment, decrement, reset } = useAppStore();
 
-  // Server-persisted counter
+  // Server-persisted counter (tRPC)
   const utils = trpc.useUtils();
   const { data: serverCount = 0, isLoading: serverLoading } = trpc.counter.get.useQuery();
   const incrementServer = trpc.counter.increment.useMutation({
@@ -38,6 +39,15 @@ export default function Home() {
   const decrementServer = trpc.counter.decrement.useMutation({
     onSuccess: () => utils.counter.get.invalidate(),
   });
+
+  // Real-time WebSocket state
+  const {
+    connected,
+    counter: realtimeCounter,
+    users: onlineUsers,
+    increment: incrementRealtime,
+    decrement: decrementRealtime,
+  } = useSocket();
 
   return (
     <div className="container py-8 sm:py-12 lg:py-16">
@@ -108,7 +118,7 @@ export default function Home() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto"
+        className="grid sm:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto"
       >
         {/* Auth Status Card */}
         <Card>
@@ -220,6 +230,62 @@ export default function Home() {
                   size="icon" 
                   onClick={() => incrementServer.mutate()}
                   disabled={incrementServer.isPending || serverLoading}
+                  className="h-10 w-10 sm:h-9 sm:w-auto sm:px-3"
+                >
+                  <span>+</span>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Real-time WebSocket Demo Card */}
+        <Card>
+          <CardHeader className="pb-2 sm:pb-4">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+              Real-time State
+              <Broadcast className="h-4 w-4 text-green-500" />
+            </CardTitle>
+            <CardDescription className="text-sm flex items-center gap-2">
+              WebSocket instant sync
+              <span className="flex items-center gap-1 text-xs">
+                <Users className="h-3 w-3" />
+                {onlineUsers} online
+              </span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center justify-between sm:justify-start gap-4">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`h-2 w-2 rounded-full ${
+                    connected ? "bg-green-500" : "bg-red-500 animate-pulse"
+                  }`}
+                />
+                <motion.span
+                  key={realtimeCounter}
+                  initial={{ scale: 1.2 }}
+                  animate={{ scale: 1 }}
+                  className="text-2xl sm:text-3xl font-bold tabular-nums w-12 sm:w-16 text-center"
+                >
+                  {realtimeCounter}
+                </motion.span>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={decrementRealtime}
+                  disabled={!connected}
+                  className="h-10 w-10 sm:h-9 sm:w-auto sm:px-3"
+                >
+                  <span>-</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={incrementRealtime}
+                  disabled={!connected}
                   className="h-10 w-10 sm:h-9 sm:w-auto sm:px-3"
                 >
                   <span>+</span>

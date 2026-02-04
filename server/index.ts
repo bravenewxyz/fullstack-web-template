@@ -9,6 +9,7 @@ import { createContext } from "./lib/context";
 import { serveStatic, setupVite } from "./lib/vite";
 import { logger } from "./lib/logSession";
 import { ENV } from "./lib/env";
+import { initializeSocket } from "./socket";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -37,6 +38,10 @@ async function startServer() {
 
   const app = express();
   const server = createServer(app);
+
+  // Initialize Socket.IO for real-time features
+  initializeSocket(server);
+
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
