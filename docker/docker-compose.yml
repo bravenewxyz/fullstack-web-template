@@ -18,7 +18,7 @@ services:
       retries: 10
 
   auth:
-    image: supabase/gotrue:v2.151.0
+    image: supabase/auth:v2.185.0
     container_name: supabase-auth
     restart: unless-stopped
     depends_on:

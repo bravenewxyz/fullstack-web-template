@@ -41,9 +41,9 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   
-  // In self-hosted mode, proxy /auth requests to GoTrue
+  // In self-hosted mode, proxy /auth requests to Auth service
   if (ENV.isSelfHosted) {
-    log.info("Self-hosted mode: proxying /auth to GoTrue on localhost:9999");
+    log.info("Self-hosted mode: proxying /auth to Auth service on localhost:9999");
     app.use(
       "/auth",
       createProxyMiddleware({

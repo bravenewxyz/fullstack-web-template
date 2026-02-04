@@ -7,7 +7,7 @@ A modern fullstack TypeScript template with React, Express, tRPC, and PostgreSQL
 - **Frontend**: React 19, Vite, Tailwind CSS v4, Radix UI, Phosphor Icons, Zustand, Framer Motion
 - **Backend**: Express, tRPC v11, Drizzle ORM
 - **Database**: PostgreSQL (via Supabase)
-- **Auth**: Supabase Auth (GoTrue)
+- **Auth**: Supabase Auth
 - **LLM**: OpenRouter (access 200+ models)
 - **Package Manager**: Bun
 
@@ -15,7 +15,7 @@ A modern fullstack TypeScript template with React, Express, tRPC, and PostgreSQL
 
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/your-template)
 
-**Zero configuration required!** The Dockerfile bundles PostgreSQL, GoTrue (Supabase Auth), and the Node.js app together.
+**Zero configuration required!** The Dockerfile bundles PostgreSQL, Supabase Auth, and the Node.js app together.
 
 ### Option A: Fully Self-Contained (simplest)
 1. Click "Deploy on Railway"

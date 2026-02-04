@@ -5,7 +5,7 @@ const getSupabaseUrl = (): string => {
   const envUrl = import.meta.env.VITE_SUPABASE_URL;
   if (envUrl) return envUrl;
   
-  // Self-hosted mode: GoTrue is proxied at /auth on same origin
+  // Self-hosted mode: Auth service is proxied at /auth on same origin
   if (typeof window !== "undefined") {
     return `${window.location.origin}/auth`;
   }

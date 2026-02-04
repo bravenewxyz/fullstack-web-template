@@ -10,7 +10,7 @@ if [ -n "$DATABASE_URL" ] && [[ ! "$DATABASE_URL" =~ "@localhost" ]] && [[ ! "$D
     echo "External DATABASE_URL detected - using external PostgreSQL"
 fi
 
-# Generate secure keys if not provided
+# Generate secure JWT secret if not provided (GOTRUE_* are official Auth env var names)
 if [ "$GOTRUE_JWT_SECRET" = "your-super-secret-jwt-token-with-at-least-32-characters" ] || [ -z "$GOTRUE_JWT_SECRET" ]; then
     export GOTRUE_JWT_SECRET=$(openssl rand -base64 32)
     echo "Generated random JWT secret"
@@ -50,13 +50,13 @@ else
     export VITE_SUPABASE_URL=""
 fi
 
-# Auth service configuration
+# Auth service configuration (GOTRUE_* are official Auth env var names)
 export GOTRUE_OPERATOR_TOKEN=$SUPABASE_SERVICE_ROLE_KEY
 export GOTRUE_JWT_AUD="authenticated"
 export GOTRUE_JWT_DEFAULT_GROUP_NAME="authenticated"
 
 if [ "$USE_EXTERNAL_DB" = true ]; then
-    # Using external database - set GoTrue to use the same DATABASE_URL
+    # Using external database - set Auth service to use the same DATABASE_URL
     # Add sslmode if not present
     if [[ "$DATABASE_URL" =~ "?" ]]; then
         export GOTRUE_DB_DATABASE_URL="${DATABASE_URL}&sslmode=require"
@@ -66,21 +66,22 @@ if [ "$USE_EXTERNAL_DB" = true ]; then
     
     # Disable local PostgreSQL in supervisord, shorter startup delays
     export AUTOSTART_POSTGRES=false
-    export GOTRUE_STARTUP_DELAY=2
+    export AUTH_STARTUP_DELAY=2
     export APP_STARTUP_DELAY=5
     
     echo "=== Starting services (external DB) ==="
     echo "DATABASE_URL: [external]"
-    echo "GOTRUE_SITE_URL: $GOTRUE_SITE_URL"
+    echo "Auth Site URL: $GOTRUE_SITE_URL"
     echo "Self-hosted mode: Auth available at /auth"
 else
     # Using self-contained PostgreSQL
     export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}"
-    export GOTRUE_DB_DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}?sslmode=disable"
+    # Auth service uses supabase_auth_admin role which owns the auth schema
+    export GOTRUE_DB_DATABASE_URL="postgresql://supabase_auth_admin:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}?sslmode=disable"
     
     # Enable local PostgreSQL in supervisord, longer startup delays
     export AUTOSTART_POSTGRES=true
-    export GOTRUE_STARTUP_DELAY=5
+    export AUTH_STARTUP_DELAY=5
     export APP_STARTUP_DELAY=10
     
     # Ensure data directory exists with correct permissions
@@ -101,10 +102,29 @@ else
         # Start PostgreSQL temporarily to create user and database
         su postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D /data/postgres -w start"
         
-        # Set postgres password and create auth schema
+        # Set postgres password and create roles/schema for Auth service
         su postgres -c "psql -c \"ALTER USER postgres PASSWORD '${POSTGRES_PASSWORD}';\""
-        su postgres -c "psql -c \"CREATE SCHEMA IF NOT EXISTS auth;\""
+        
+        # Create base roles for RLS
+        su postgres -c "psql -c \"CREATE ROLE anon NOLOGIN NOINHERIT;\""
+        su postgres -c "psql -c \"CREATE ROLE authenticated NOLOGIN NOINHERIT;\""
+        su postgres -c "psql -c \"CREATE ROLE service_role NOLOGIN NOINHERIT BYPASSRLS;\""
+        
+        # Create supabase_auth_admin role for Auth service
+        su postgres -c "psql -c \"CREATE ROLE supabase_auth_admin NOINHERIT CREATEROLE LOGIN PASSWORD '${POSTGRES_PASSWORD}';\""
+        su postgres -c "psql -c \"ALTER ROLE supabase_auth_admin SET search_path TO auth, public;\""
+        su postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE postgres TO supabase_auth_admin;\""
+        
+        # Create auth schema owned by supabase_auth_admin
+        su postgres -c "psql -c \"CREATE SCHEMA IF NOT EXISTS auth AUTHORIZATION supabase_auth_admin;\""
+        
+        # Grant permissions
+        su postgres -c "psql -c \"GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;\""
+        su postgres -c "psql -c \"GRANT CREATE ON SCHEMA public TO supabase_auth_admin;\""
+        
+        # Create required extensions
         su postgres -c "psql -c 'CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";'"
+        su postgres -c "psql -c 'CREATE EXTENSION IF NOT EXISTS pgcrypto;'"
         
         # Run Drizzle migrations
         echo "Running database migrations..."
@@ -121,7 +141,7 @@ else
 
     echo "=== Starting services (self-contained DB) ==="
     echo "DATABASE_URL: postgresql://${POSTGRES_USER}:***@localhost:5432/${POSTGRES_DB}"
-    echo "GOTRUE_SITE_URL: $GOTRUE_SITE_URL"
+    echo "Auth Site URL: $GOTRUE_SITE_URL"
     echo "Self-hosted mode: Auth available at /auth"
 fi
 

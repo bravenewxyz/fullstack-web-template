@@ -1,5 +1,5 @@
 # Self-contained Supabase + Node.js app for Railway
-# Runs PostgreSQL, GoTrue (auth), and the Node.js app in a single container
+# Runs PostgreSQL, Supabase Auth, and the Node.js app in a single container
 
 FROM node:20-bookworm-slim
 
@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Supabase Auth (formerly GoTrue)
+# Install Supabase Auth
 ARG AUTH_VERSION=2.185.0
 RUN wget -q https://github.com/supabase/auth/releases/download/v${AUTH_VERSION}/auth-v${AUTH_VERSION}-x86.tar.gz \
     && tar -xzf auth-v${AUTH_VERSION}-x86.tar.gz -C /usr/local/bin \
@@ -55,9 +55,9 @@ ENV POSTGRES_PASSWORD=postgres-password-change-me
 ENV POSTGRES_DB=postgres
 ENV DATABASE_URL=postgresql://postgres:postgres-password-change-me@localhost:5432/postgres
 
-# GoTrue configuration
+# Supabase Auth configuration (GOTRUE_* are the official env var names)
 ENV GOTRUE_DB_DRIVER=postgres
-ENV GOTRUE_DB_DATABASE_URL=postgresql://postgres:postgres-password-change-me@localhost:5432/postgres?sslmode=disable
+ENV GOTRUE_DB_DATABASE_URL=postgresql://supabase_auth_admin:postgres-password-change-me@localhost:5432/postgres?sslmode=disable
 ENV GOTRUE_SITE_URL=http://localhost:3000
 ENV GOTRUE_JWT_SECRET=your-super-secret-jwt-token-with-at-least-32-characters
 ENV GOTRUE_JWT_EXP=3600

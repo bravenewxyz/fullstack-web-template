@@ -1,7 +1,8 @@
-// Detect self-hosted mode: GoTrue runs on localhost:9999 internally
+// Detect self-hosted mode: Auth service runs on localhost:9999 internally
+// (GOTRUE_API_PORT is the official env var name for Auth service port)
 const isSelfHosted = process.env.SELF_HOSTED === "true" || process.env.GOTRUE_API_PORT === "9999";
 
-// For self-hosted, use internal GoTrue URL for server-side auth verification
+// For self-hosted, use internal Auth service URL for server-side auth verification
 const supabaseUrl = isSelfHosted 
   ? "http://localhost:9999" 
   : (process.env.VITE_SUPABASE_URL ?? "");
