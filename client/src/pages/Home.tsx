@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 import { useAppStore } from "@/store";
 import { motion } from "framer-motion";
-import { ArrowRight, Code, Database, Lightning } from "@phosphor-icons/react";
+import { ArrowRight, Code, Database, Lightning, CloudArrowUp } from "@phosphor-icons/react";
 import { Link } from "wouter";
 
 const features = [
@@ -27,6 +28,16 @@ const features = [
 export default function Home() {
   const { user, loading } = useAuth();
   const { count, increment, decrement, reset } = useAppStore();
+
+  // Server-persisted counter
+  const utils = trpc.useUtils();
+  const { data: serverCount = 0, isLoading: serverLoading } = trpc.counter.get.useQuery();
+  const incrementServer = trpc.counter.increment.useMutation({
+    onSuccess: () => utils.counter.get.invalidate(),
+  });
+  const decrementServer = trpc.counter.decrement.useMutation({
+    onSuccess: () => utils.counter.get.invalidate(),
+  });
 
   return (
     <div className="container py-8 sm:py-12 lg:py-16">
@@ -97,7 +108,7 @@ export default function Home() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="grid sm:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto"
+        className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto"
       >
         {/* Auth Status Card */}
         <Card>
@@ -127,11 +138,11 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        {/* Counter Demo Card */}
+        {/* Client Counter Demo Card */}
         <Card>
           <CardHeader className="pb-2 sm:pb-4">
-            <CardTitle className="text-base sm:text-lg">Zustand Store</CardTitle>
-            <CardDescription className="text-sm">Persisted client state demo</CardDescription>
+            <CardTitle className="text-base sm:text-lg">Client State</CardTitle>
+            <CardDescription className="text-sm">Zustand persisted locally</CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex items-center justify-between sm:justify-start gap-4">
@@ -169,6 +180,49 @@ export default function Home() {
                 >
                   <span className="sm:hidden">+</span>
                   <span className="hidden sm:inline">+</span>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Server Counter Demo Card */}
+        <Card>
+          <CardHeader className="pb-2 sm:pb-4">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+              Server State
+              <CloudArrowUp className="h-4 w-4 text-muted-foreground" />
+            </CardTitle>
+            <CardDescription className="text-sm">PostgreSQL persisted globally</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center justify-between sm:justify-start gap-4">
+              <motion.span
+                key={serverCount}
+                initial={{ scale: 1.2 }}
+                animate={{ scale: 1 }}
+                className="text-2xl sm:text-3xl font-bold tabular-nums w-12 sm:w-16 text-center"
+              >
+                {serverLoading ? "..." : serverCount}
+              </motion.span>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => decrementServer.mutate()}
+                  disabled={decrementServer.isPending || serverLoading}
+                  className="h-10 w-10 sm:h-9 sm:w-auto sm:px-3"
+                >
+                  <span>-</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => incrementServer.mutate()}
+                  disabled={incrementServer.isPending || serverLoading}
+                  className="h-10 w-10 sm:h-9 sm:w-auto sm:px-3"
+                >
+                  <span>+</span>
                 </Button>
               </div>
             </div>

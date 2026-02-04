@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 /**
  * Core user table backing auth flow.
@@ -25,4 +25,14 @@ export const users = pgTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * Global counter for demonstrating persisted server state.
+ * Single row table pattern - always use id=1.
+ */
+export const globalCounter = pgTable("global_counter", {
+  id: serial("id").primaryKey(),
+  value: integer("value").default(0).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type GlobalCounter = typeof globalCounter.$inferSelect;
