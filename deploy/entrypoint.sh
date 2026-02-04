@@ -54,13 +54,14 @@ fi
 export GOTRUE_OPERATOR_TOKEN=$SUPABASE_SERVICE_ROLE_KEY
 export GOTRUE_JWT_AUD="authenticated"
 
-# Logging configuration - use JSON format to fix malformed log output
+# Logging configuration
 export GOTRUE_LOG_LEVEL="info"
 export GOTRUE_LOG_FILE="/dev/stdout"
 
-# Unset deprecated env vars to suppress warnings
-unset GOTRUE_JWT_DEFAULT_GROUP_NAME
-unset GOTRUE_JWT_ADMIN_GROUP_NAME
+# Explicitly set deprecated env vars to empty to suppress warnings
+# (GoTrue has internal defaults that trigger warnings if not overridden)
+export GOTRUE_JWT_DEFAULT_GROUP_NAME=""
+export GOTRUE_JWT_ADMIN_GROUP_NAME=""
 
 if [ "$USE_EXTERNAL_DB" = true ]; then
     # Using external database - set Auth service to use the same DATABASE_URL
@@ -124,6 +125,10 @@ else
         
         # Create auth schema owned by supabase_auth_admin
         su postgres -c "psql -c \"CREATE SCHEMA IF NOT EXISTS auth AUTHORIZATION supabase_auth_admin;\""
+        
+        # Pre-create GoTrue's schema_migrations table to avoid "does not exist" error on first run
+        su postgres -c "psql -c \"CREATE TABLE IF NOT EXISTS auth.schema_migrations (version VARCHAR(14) NOT NULL PRIMARY KEY);\""
+        su postgres -c "psql -c \"ALTER TABLE auth.schema_migrations OWNER TO supabase_auth_admin;\""
         
         # Grant permissions
         su postgres -c "psql -c \"GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;\""
